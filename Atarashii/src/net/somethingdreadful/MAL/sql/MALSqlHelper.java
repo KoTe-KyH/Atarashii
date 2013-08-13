@@ -8,7 +8,7 @@ import android.util.Log;
 public class MALSqlHelper extends SQLiteOpenHelper {
 
     protected static final String DATABASE_NAME = "MAL.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
 
     private static MALSqlHelper instance;
 
@@ -65,6 +65,25 @@ public class MALSqlHelper extends SQLiteOpenHelper {
             + TABLE_MANGA
             + " ADD COLUMN lastUpdate integer NOT NULL DEFAULT 407570400";
 
+    private static final String ALTER_ANIME_TABLE = "ALTER TABLE " + TABLE_ANIME + " ";
+    private static final String ALTER_MANGA_TABLE = "ALTER TABLE " + TABLE_MANGA + " ";
+
+    private static final String ADD_SYNONYMS = "ADD COLUMN synonyms varchar";
+
+    private static final String ADD_ENGLISH_TITLES = "ADD COLUMN englishTitles varchar";
+
+    private static final String ADD_JAPANESE_TITLES = "ADD COLUMN japaneseTitles varchar";
+
+    private static final String ADD_RANK = "ADD COLUMN rank integer";
+
+    private static final String ADD_POPULARITY_RANK = "ADD COLUMN popularityRank integer";
+
+    private static final String ADD_START_DATE = "ADD COLUMN startDate varchar";
+
+    private static final String ADD_END_DATE = "ADD COLUMN endDate varchar";
+
+    private static final String ADD_GENRES = "ADD COLUMN genres varchar";
+
 
     public MALSqlHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -87,6 +106,8 @@ public class MALSqlHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_ANIME_TABLE);
         db.execSQL(CREATE_MANGA_TABLE);
+
+        upgradeV6(db);
 
     }
 
@@ -116,5 +137,32 @@ public class MALSqlHelper extends SQLiteOpenHelper {
             db.execSQL("insert into " + TABLE_MANGA + " select * from temp_table;");
             db.execSQL("drop table temp_table;");
         }
+
+        if (oldVersion < 6) {
+            upgradeV6(db);
+        }
+    }
+
+    private void upgradeV6(SQLiteDatabase db) {
+        db.execSQL(ALTER_ANIME_TABLE + ADD_SYNONYMS); //Synonyms
+        db.execSQL(ALTER_MANGA_TABLE + ADD_SYNONYMS); //Formatted as CSV
+
+        db.execSQL(ALTER_ANIME_TABLE + ADD_ENGLISH_TITLES); //Other English titles, if any
+        db.execSQL(ALTER_MANGA_TABLE + ADD_ENGLISH_TITLES); //Formatted as CSV
+
+        db.execSQL(ALTER_ANIME_TABLE + ADD_JAPANESE_TITLES); //Title in Japanese characters, if applicable
+        db.execSQL(ALTER_MANGA_TABLE + ADD_JAPANESE_TITLES); //Formatted as CSV
+
+        db.execSQL(ALTER_ANIME_TABLE + ADD_RANK); //Rank based on a weighted user score
+        db.execSQL(ALTER_MANGA_TABLE + ADD_RANK); //Integer
+
+        db.execSQL(ALTER_ANIME_TABLE + ADD_POPULARITY_RANK); //Rank based on popularity
+        db.execSQL(ALTER_MANGA_TABLE + ADD_POPULARITY_RANK); //Integer
+
+        db.execSQL(ALTER_ANIME_TABLE + ADD_START_DATE); //Add the start and end dates. Anime only.
+        db.execSQL(ALTER_ANIME_TABLE + ADD_END_DATE); //Time formatted string. Use time parser or something.
+
+        db.execSQL(ALTER_ANIME_TABLE + ADD_GENRES); //Genres
+        db.execSQL(ALTER_MANGA_TABLE + ADD_GENRES); //Formatted as CSV
     }
 }
